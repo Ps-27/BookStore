@@ -1,7 +1,7 @@
 # E-book
 
 What the Project Does:
-You're creating a website where people can:
+creating a website where people can:
 
 See and search for books.
 Sign up and log in.
