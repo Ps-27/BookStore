@@ -1,80 +1,211 @@
-// Import necessary packages
+package main
+
 import (
-    "database/sql"
-    _ "github.com/go-sql-driver/mysql"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// Define a Book struct to hold book details
-type Book struct {
-    ID          int    `json:"id"`
-    Title       string `json:"title"`
-    Author      string `json:"author"`
-    Writer      string `json:"writer"`
-    PublishDate string `json:"publishDate"`
-    Category    string `json:"category"`
-}
-// Fetch book details from the database
-func getBookDetails(w http.ResponseWriter, r *http.Request) {
-    bookID := mux.Vars(r)["id"]
+var db *sql.DB
 
-    // Establish a database connection (replace with your DB credentials)
-    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/yourdb")
-    if err != nil {
-        log.Fatal(err)
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-    }
-    defer db.Close()
-
-    // Query the database for book details
-    var book Book
-    err = db.QueryRow("SELECT id, title, author, writer, publish_date, category FROM books WHERE id=?", bookID).Scan(
-        &book.ID, &book.Title, &book.Author, &book.Writer, &book.PublishDate, &book.Category)
-    if err != nil {
-        log.Println(err)
-        w.WriteHeader(http.StatusNotFound)
-        return
-      }
-
-    // Return book details as JSON
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(book) 
-
-    // Log user activity to the database (replace with your actual user tracking logic)
-    userID := r.Header.Get("X-User-Id") // Assuming you pass user ID in the header
-    logUserActivity(userID, "Viewed book details for ID: "+bookID)
-
-} 
-//table name: books
+// Secret key for JWT (you should use a strong secret in a real application)
+var secretKey = []byte("secret_key")
 
 
-// Define a function to log user activity
-func logUserActivity(userID string, activity string) error {
-    // Establish a database connection (replace with your DB credentials)
-    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/yourdb")
-    if err != nil {
-        log.Println("Error opening database connection:", err)
-        return err
-    }
-    defer db.Close()
-
-    // Prepare an SQL statement to insert user activity
-    stmt, err := db.Prepare("INSERT INTO user_activity (user_id, activity) VALUES (?, ?)")
-    if err != nil {
-        log.Println("Error preparing SQL statement:", err)
-        return err
-    }
-    defer stmt.Close() 
-    // Execute the SQL statement to insert user activity
-    _, err = stmt.Exec(userID, activity)
-    if err != nil {
-        log.Println("Error inserting user activity:", err)
-        return err
-    }
-
-    log.Printf("User activity logged - UserID: %s, Activity: %s\n", userID, activity)
-    return nil
+// CustomClaims represents the JWT claims
+type CustomClaims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
 }
 
-//inserted user activity into a table named user_activity. table with appropriate columns (e.g., id, user_id, activity, timestamp).
+func initDB() error {
+	// Replace these with your MySQL database credentials
+	dsn := "username:password@tcp(your-mysql-host:port)/your-database"
+	var err error
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		return err
+	}
+	return db.Ping()
+}
 
+// Middleware for authentication
+func tokenRequired((next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenHeader := r.Header.Get("Authorization")
+		if tokenHeader == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, "Token is missing")
+			return
+		}
+
+		tokenString := strings.Split(tokenHeader, " ")[1]
+		token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return secretKey, nil
+		})
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, "Invalid token")
+			return
+		}
+
+    r = r.WithContext(userContext(r.Context(), claims.Username))
+		next.ServeHTTP(w, r)
+	})
+}
+
+func userContext(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, "user", username)
+}
+
+// Registration handler
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+	// ...
+}
+
+// Login handler
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	// ...
+}
+
+// Create a JWT token
+func createToken(username string) string {
+	// ...
+}
+
+// Product details handler
+func productDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	productID := mux.Vars(r)["productID"]
+	product, exists := products[productID]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Product not found")
+		return
+	}
+
+	// Implement your recommendation logic here
+	searchTerms := getUserSearchHistory(getCurrentUserID(r))
+	recommendations := getRecommendations(searchTerms, getCurrentUserID(r))
+  response := map[string]interface{}{
+		"product":        product,
+		"recommendations": recommendations,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// Get recommendations based on user search history
+func getRecommendations(searchTerms []string, userID string) []string {
+	recommendedProductIDs := []string{}
+
+	// Fetch users who have made similar searches
+	similarUserIDs := []string{}
+	query := "SELECT DISTINCT user_id FROM user_search_history WHERE search_term IN (?) AND user_id != ?"
+	rows, err := db.Query(query, strings.Join(searchTerms, ","), userID)
+	if err != nil {
+		fmt.Printf("Error fetching similar users: %v\n", err)
+		return recommendedProductIDs
+	}
+	defer rows.Close()
+
+  for rows.Next() {
+		var similarUserID string
+		err := rows.Scan(&similarUserID)
+		if err != nil {
+			fmt.Printf("Error scanning rows: %v\n", err)
+			continue
+		}
+		similarUserIDs = append(similarUserIDs, similarUserID)
+	}
+
+	// Fetch books searched by similar users but not searched by the current user
+	query = "SELECT DISTINCT product_id FROM user_search_history WHERE user_id IN (?) AND product_id NOT IN (SELECT DISTINCT product_id FROM user_search_history WHERE user_id=?)"
+	rows, err = db.Query(query, strings.Join(similarUserIDs, ","), userID)
+	if err != nil {
+		fmt.Printf("Error fetching recommended products: %v\n", err)
+		return recommendedProductIDs
+	}
+	defer rows.Close() 
+
+  for rows.Next() {
+		var productID string
+		err := rows.Scan(&productID)
+		if err != nil {
+			fmt.Printf("Error scanning rows: %v\n", err)
+			continue
+		}
+		recommendedProductIDs = append(recommendedProductIDs, productID)
+	}
+
+	return recommendedProductIDs
+}
+
+// Get the current user's ID (replace with your user identification logic)
+func getCurrentUserID(r *http.Request) string {
+	// Replace this with your logic to retrieve the user's ID based on the JWT token or other authentication mechanism
+	return "user1"
+}
+
+// Get the search history of the current user
+func getUserSearchHistory(userID string) []string {
+	searchTerms := []string{}
+
+	// Retrieve search history from the database for the given user
+	query := "SELECT DISTINCT search_term FROM user_search_history WHERE user_id=?"
+	rows, err := db.Query(query, userID)
+	if err != nil {
+		fmt.Printf("Error fetching search history: %v\n", err)
+		return searchTerms
+	}
+	defer rows.Close()
+
+
+  for rows.Next() {
+		var searchTerm string
+		err := rows.Scan(&searchTerm)
+		if err != nil {
+			fmt.Printf("Error scanning rows: %v\n", err)
+			continue
+		}
+		searchTerms = append(searchTerms, searchTerm)
+	}
+
+	return searchTerms
+}
+
+// ...
+func main() {
+	if err := initDB(); err != nil {
+		fmt.Printf("Failed to connect to the database: %v\n", err)
+		return
+	}
+
+	r := mux.NewRouter()
+
+	// Register and login endpoints
+	r.HandleFunc("/register", registerHandler).Methods("POST")
+	r.HandleFunc("/login", loginHandler).Methods("POST")
+
+	// Product details endpoint with authentication middleware
+	r.Handle("/product/{productID}", tokenRequired(http.HandlerFunc(productDetailsHandler))).Methods("GET")
+
+	http.Handle("/", r)
+	http.ListenAndServe(":8080", nil)
+}
+
+
+  
+
+  
+
+
+  
