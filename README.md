@@ -1,4 +1,4 @@
-# E-book
+# Book-Store
 
 What the Project Does:
 creating a website where people can:
