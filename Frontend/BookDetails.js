@@ -19,3 +19,4 @@ const BookDetails = ({ book }) => {
     </div>
   );
 };
+export default BookDetails;
