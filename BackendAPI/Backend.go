@@ -45,7 +45,36 @@ func getBookDetails(w http.ResponseWriter, r *http.Request) {
     logUserActivity(userID, "Viewed book details for ID: "+bookID)
 
 } 
-
-
-
 //table name: books
+
+
+// Define a function to log user activity
+func logUserActivity(userID string, activity string) error {
+    // Establish a database connection (replace with your DB credentials)
+    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/yourdb")
+    if err != nil {
+        log.Println("Error opening database connection:", err)
+        return err
+    }
+    defer db.Close()
+
+    // Prepare an SQL statement to insert user activity
+    stmt, err := db.Prepare("INSERT INTO user_activity (user_id, activity) VALUES (?, ?)")
+    if err != nil {
+        log.Println("Error preparing SQL statement:", err)
+        return err
+    }
+    defer stmt.Close() 
+    // Execute the SQL statement to insert user activity
+    _, err = stmt.Exec(userID, activity)
+    if err != nil {
+        log.Println("Error inserting user activity:", err)
+        return err
+    }
+
+    log.Printf("User activity logged - UserID: %s, Activity: %s\n", userID, activity)
+    return nil
+}
+
+//inserted user activity into a table named user_activity. table with appropriate columns (e.g., id, user_id, activity, timestamp).
+
