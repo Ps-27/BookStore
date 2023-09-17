@@ -12,7 +12,23 @@ type Book struct {
     Writer      string `json:"writer"`
     PublishDate string `json:"publishDate"`
     Category    string `json:"category"`
+} 
+// Define a CartItem struct to represent items in the cart
+type CartItem struct {
+    BookID    int    `json:"book_id"`
+    Quantity  int    `json:"quantity"`
+    // Add more properties as needed (e.g., book details)
 }
+
+// Define a Cart struct to represent the user's cart
+type Cart struct {
+    UserID     int         `json:"user_id"`
+    Items      []CartItem  `json:"items"`
+}
+
+
+
+
 // Fetch book details from the database
 func getBookDetails(w http.ResponseWriter, r *http.Request) {
     bookID := mux.Vars(r)["id"]
@@ -77,3 +93,24 @@ func logUserActivity(userID string, activity string) error {
 }
 
 //inserted user activity into a table named user_activity. table with appropriate columns (e.g., id, user_id, activity, timestamp).
+
+
+// API endpoint to add a book to the user's cart
+func addToCart(w http.ResponseWriter, r *http.Request) {
+    // Parse book ID and quantity from the request
+    // Add the book to the user's cart (create/update cart in your data store)
+    // Respond with updated cart data
+}
+
+// API endpoint to view the user's cart
+func viewCart(w http.ResponseWriter, r *http.Request) {
+    // Retrieve the user's cart from the data store
+    // Respond with cart data
+}
+
+// API endpoint to update cart item quantities or remove items
+func updateCart(w http.ResponseWriter, r *http.Request) {
+    // Parse item updates from the request
+    // Update the user's cart in the data store
+    // Respond with updated cart data
+}
