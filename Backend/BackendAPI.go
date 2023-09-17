@@ -114,3 +114,10 @@ func updateCart(w http.ResponseWriter, r *http.Request) {
     // Update the user's cart in the data store
     // Respond with updated cart data
 }
+
+// Handle fetching the highest demanding books
+func getHighestDemandingBooks(w http.ResponseWriter, r *http.Request) {
+    // Query the useractivity table in your MySQL database
+    // Calculate the highest demanding books based on user interactions
+    // Return the results as JSON response
+}
