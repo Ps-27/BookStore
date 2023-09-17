@@ -38,7 +38,14 @@ func getBookDetails(w http.ResponseWriter, r *http.Request) {
 
     // Return book details as JSON
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(book)
+    json.NewEncoder(w).Encode(book) 
+
+    // Log user activity to the database (replace with your actual user tracking logic)
+    userID := r.Header.Get("X-User-Id") // Assuming you pass user ID in the header
+    logUserActivity(userID, "Viewed book details for ID: "+bookID)
+
 } 
+
+
 
 //table name: books
