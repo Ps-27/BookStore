@@ -4,7 +4,7 @@ import (
     _ "github.com/go-sql-driver/mysql"
 )
 
-// Define a Book struct to hold book details
+// Defination of a Book struct to hold book details
 type Book struct {
     ID          int    `json:"id"`
     Title       string `json:"title"`
@@ -13,14 +13,14 @@ type Book struct {
     PublishDate string `json:"publishDate"`
     Category    string `json:"category"`
 } 
-// Define a CartItem struct to represent items in the cart
+// Defination of a CartItem struct to represent items in the cart
 type CartItem struct {
     BookID    int    `json:"book_id"`
     Quantity  int    `json:"quantity"`
     // Add more properties as needed (e.g., book details)
 }
 
-// Define a Cart struct to represent the user's cart
+// Defination of a Cart struct to represent the user's cart
 type Cart struct {
     UserID     int         `json:"user_id"`
     Items      []CartItem  `json:"items"`
@@ -33,8 +33,8 @@ type Cart struct {
 func getBookDetails(w http.ResponseWriter, r *http.Request) {
     bookID := mux.Vars(r)["id"]
 
-    // Establish a database connection (replace with your DB credentials)
-    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/yourdb")
+    // Establish a database connection (replace with  DB credentials)
+    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/db")
     if err != nil {
         log.Fatal(err)
         w.WriteHeader(http.StatusInternalServerError)
@@ -42,7 +42,7 @@ func getBookDetails(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    // Query the database for book details
+    // Query the database for book details on speficic key example- id or name
     var book Book
     err = db.QueryRow("SELECT id, title, author, writer, publish_date, category FROM books WHERE id=?", bookID).Scan(
         &book.ID, &book.Title, &book.Author, &book.Writer, &book.PublishDate, &book.Category)
@@ -56,7 +56,7 @@ func getBookDetails(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(book) 
 
-    // Log user activity to the database (replace with your actual user tracking logic)
+    // Log user activity to the database (replace with  actual user tracking logic)
     userID := r.Header.Get("X-User-Id") // Assuming you pass user ID in the header
     logUserActivity(userID, "Viewed book details for ID: "+bookID)
 
@@ -64,10 +64,10 @@ func getBookDetails(w http.ResponseWriter, r *http.Request) {
 //table name: books
 
 
-// Define a function to log user activity
+// Defination of a function to log user activity
 func logUserActivity(userID string, activity string) error {
-    // Establish a database connection (replace with your DB credentials)
-    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/yourdb")
+    // Establish a database connection (replace with  DB credentials)
+    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/db")
     if err != nil {
         log.Println("Error opening database connection:", err)
         return err
@@ -98,7 +98,7 @@ func logUserActivity(userID string, activity string) error {
 // API endpoint to add a book to the user's cart
 func addToCart(w http.ResponseWriter, r *http.Request) {
     // Parse book ID and quantity from the request
-    // Add the book to the user's cart (create/update cart in your data store)
+    // Add the book to the user's cart (create/update cart in  data store)
     // Respond with updated cart data
 }
 
@@ -117,7 +117,7 @@ func updateCart(w http.ResponseWriter, r *http.Request) {
 
 // Handle fetching the highest demanding books
 func getHighestDemandingBooks(w http.ResponseWriter, r *http.Request) {
-    // Query the useractivity table in your MySQL database
+    // Query the useractivity table in  MySQL database
     // Calculate the highest demanding books based on user interactions
     // Return the results as JSON response
 }
