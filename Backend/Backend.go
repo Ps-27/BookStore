@@ -15,7 +15,7 @@ import (
 
 var db *sql.DB
 
-// Secret key for JWT (you should use a strong secret in a real application)
+// Secret key for JWT (we should use a strong secret in a real application)
 var secretKey = []byte("secret_key")
 
 
@@ -26,8 +26,8 @@ type CustomClaims struct {
 }
 
 func initDB() error {
-	// Replace these with your MySQL database credentials
-	dsn := "username:password@tcp(your-mysql-host:port)/your-database"
+	// Need to Replace these with  MySQL database credentials
+	dsn := "username:password@tcp(mysql-host:port)/database"
 	var err error
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
@@ -91,7 +91,7 @@ func productDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Implement your recommendation logic here
+	// need to Implement recommendation logic here
 	searchTerms := getUserSearchHistory(getCurrentUserID(r))
 	recommendations := getRecommendations(searchTerms, getCurrentUserID(r))
   response := map[string]interface{}{
@@ -127,7 +127,7 @@ func getRecommendations(searchTerms []string, userID string) []string {
 		similarUserIDs = append(similarUserIDs, similarUserID)
 	}
 
-	// Fetch books searched by similar users but not searched by the current user
+	// Fetching books searched by similar users but not searched by the current user
 	query = "SELECT DISTINCT product_id FROM user_search_history WHERE user_id IN (?) AND product_id NOT IN (SELECT DISTINCT product_id FROM user_search_history WHERE user_id=?)"
 	rows, err = db.Query(query, strings.Join(similarUserIDs, ","), userID)
 	if err != nil {
@@ -149,9 +149,9 @@ func getRecommendations(searchTerms []string, userID string) []string {
 	return recommendedProductIDs
 }
 
-// Get the current user's ID (replace with your user identification logic)
+// Getting the current user's ID (need to replace with  user identification logic)
 func getCurrentUserID(r *http.Request) string {
-	// Replace this with your logic to retrieve the user's ID based on the JWT token or other authentication mechanism
+	// need to Replace this with  logic to retrieve the user's ID based on the JWT token or other authentication mechanism
 	return "user1"
 }
 
